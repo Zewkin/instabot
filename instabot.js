@@ -29,7 +29,8 @@ var bot = {
                 json: true,
             }, function (error, response, body) {
                 if (!error && response.statusCode == 200 && !body.user.is_private) {
-                    if (body.user.media.nodes[0].display_src !== self.users[key]) {
+                    var name = body.user.media.nodes[0].display_src.match(/[^\/?#]+(?=$|[?#])/)[0];
+                    if (self.users[key].indexOf(name) == -1) {
                         self.users[key] = body.user.media.nodes[0].display_src;
                         jsonfile.writeFile(file, self.users);
                         self.send(key);
@@ -45,7 +46,7 @@ var bot = {
         }, function (error, response, body) {
             if (!error && response.statusCode === 200) {
                 api.sendPhoto('64318688', body, {
-                    caption: key+' posted new photo',
+                    caption: key+' posted a new photo',
                 });
             }
         })
