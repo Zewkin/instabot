@@ -27,7 +27,7 @@ Instabot.prototype = {
         })
     },
     check: function() {
-        Object.keys(this.users).forEach((key) => {
+        Object.keys(this.users).forEach( (key) => {
             request({
                 url: 'https://www.instagram.com/'+ key +'/?__a=1',
                 json: true,
@@ -63,7 +63,7 @@ Instabot.prototype = {
 
 }
 
-var bot = new Instabot({
+let bot = new Instabot({
     token: '287633435:AAGyNZvGKKBQaZXsW2lvTzw4MJcrmB2-6JE',
     file: 'users.json',
     dialog: 64318688,
