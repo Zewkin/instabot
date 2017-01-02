@@ -1,17 +1,23 @@
-var request = require('request');
-var Telegram = require('node-telegram-bot-api');
-var jsonfile = require('jsonfile');
+'use strict';
 
-var file = 'users.json';
+let request = require('request');
+let Telegram = require('node-telegram-bot-api');
+let jsonfile = require('jsonfile');
 
-var api = new Telegram('287633435:AAGyNZvGKKBQaZXsW2lvTzw4MJcrmB2-6JE');
+function Instabot(config) {
 
-var bot = {
-    users: {},
+    this._api = new Telegram(config.token);
+    this._config = config;
+    this.users = {};
+
+}
+
+Instabot.prototype = {
+
     getUsers: function() {
-        var self = this;
+        let self = this;
         return new Promise(function(resolve, reject) {
-            jsonfile.readFile(file, function(err, obj) {
+            jsonfile.readFile(self._config.file, function(err, obj) {
                 if (err) {
                     reject();
                 } else {
@@ -22,17 +28,17 @@ var bot = {
         })
     },
     check: function() {
-        var self = this;
+        let self = this;
         Object.keys(self.users).forEach(function(key) {
             request({
                 url: 'https://www.instagram.com/'+ key +'/?__a=1',
                 json: true,
             }, function (error, response, body) {
                 if (!error && response.statusCode == 200 && !body.user.is_private) {
-                    var name = body.user.media.nodes[0].display_src.match(/[^\/?#]+(?=$|[?#])/)[0];
-                    if (self.users[key].indexOf(name) == -1) {
+                    let name = body.user.media.nodes[0].display_src.match(/[^\/?#]+(?=$|[?#])/)[0];
+                    if (!self.users[key] || self.users[key].indexOf(name) == -1) {
                         self.users[key] = body.user.media.nodes[0].display_src;
-                        jsonfile.writeFile(file, self.users);
+                        jsonfile.writeFile(self._config.file, self.users);
                         self.send(key);
                     }
                 }
@@ -40,20 +46,32 @@ var bot = {
         })
     },
     send: function(key) {
+        let self = this;
         request({
-            url: this.users[key],
+            url: self.users[key],
             encoding: null,
         }, function (error, response, body) {
             if (!error && response.statusCode === 200) {
-                api.sendPhoto('64318688', body, {
+                self._api.sendPhoto(self._config.dialog, body, {
                     caption: key+' posted a new photo',
                 });
             }
         })
+    },
+    go: function() {
+        let self = this;
+        self.getUsers().then(setInterval(function() {
+            self.check();
+        }, self._config.time))
     }
+
 }
 
+var bot = new Instabot({
+    token: '287633435:AAGyNZvGKKBQaZXsW2lvTzw4MJcrmB2-6JE',
+    file: 'users.json',
+    dialog: 64318688,
+    time: 60000
+});
 
-bot.getUsers().then(setInterval(function() {
-    bot.check();
-}, 60000))
+bot.go();
