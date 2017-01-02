@@ -15,54 +15,50 @@ function Instabot(config) {
 Instabot.prototype = {
 
     getUsers: function() {
-        let self = this;
-        return new Promise(function(resolve, reject) {
-            jsonfile.readFile(self._config.file, function(err, obj) {
+        return new Promise((resolve, reject) => {
+            jsonfile.readFile(this._config.file, (err, obj) => {
                 if (err) {
                     reject();
                 } else {
-                    self.users = obj;
+                    this.users = obj;
                     resolve();
                 }
             })
         })
     },
     check: function() {
-        let self = this;
-        Object.keys(self.users).forEach(function(key) {
+        Object.keys(this.users).forEach((key) => {
             request({
                 url: 'https://www.instagram.com/'+ key +'/?__a=1',
                 json: true,
-            }, function (error, response, body) {
+            }, (error, response, body) => {
                 if (!error && response.statusCode == 200 && !body.user.is_private) {
                     let name = body.user.media.nodes[0].display_src.match(/[^\/?#]+(?=$|[?#])/)[0];
-                    if (!self.users[key] || self.users[key].indexOf(name) == -1) {
-                        self.users[key] = body.user.media.nodes[0].display_src;
-                        jsonfile.writeFile(self._config.file, self.users);
-                        self.send(key);
+                    if (!this.users[key] || this.users[key].indexOf(name) == -1) {
+                        this.users[key] = body.user.media.nodes[0].display_src;
+                        jsonfile.writeFile(this._config.file, this.users);
+                        this.send(key);
                     }
                 }
             })
         })
     },
     send: function(key) {
-        let self = this;
         request({
-            url: self.users[key],
+            url: this.users[key],
             encoding: null,
-        }, function (error, response, body) {
+        }, (error, response, body) => {
             if (!error && response.statusCode === 200) {
-                self._api.sendPhoto(self._config.dialog, body, {
+                this._api.sendPhoto(this._config.dialog, body, {
                     caption: key+' posted a new photo',
                 });
             }
         })
     },
     go: function() {
-        let self = this;
-        self.getUsers().then(setInterval(function() {
-            self.check();
-        }, self._config.time))
+        this.getUsers().then(setInterval( () => {
+            this.check();
+        }, this._config.time))
     }
 
 }
