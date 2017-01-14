@@ -4,18 +4,16 @@ let request = require('request');
 let Telegram = require('node-telegram-bot-api');
 let jsonfile = require('jsonfile');
 
-function Instabot(config) {
+class Instabot {
 
-    this._api = new Telegram(config.token);
-    this._config = config;
-    this.users = {};
+    constructor(config) {
+        this._api = new Telegram(config.token);
+        this._config = config;
+        this.users = {};
+    }
 
-}
-
-Instabot.prototype = {
-
-    getUsers: function() {
-        return new Promise((resolve, reject) => {
+    getUsers() {
+        return new Promise( (resolve, reject) => {
             jsonfile.readFile(this._config.file, (err, obj) => {
                 if (err) {
                     reject();
@@ -25,11 +23,12 @@ Instabot.prototype = {
                 }
             })
         })
-    },
-    check: function() {
+    }
+
+    check() {
         Object.keys(this.users).forEach( (key) => {
             request({
-                url: 'https://www.instagram.com/'+ key +'/?__a=1',
+                url: `https://www.instagram.com/${key}/?__a=1`,
                 json: true,
             }, (error, response, body) => {
                 if (!error && response.statusCode == 200 && !body.user.is_private) {
@@ -42,20 +41,22 @@ Instabot.prototype = {
                 }
             })
         })
-    },
-    send: function(key) {
+    }
+
+    send(key) {
         request({
             url: this.users[key],
             encoding: null,
         }, (error, response, body) => {
             if (!error && response.statusCode === 200) {
                 this._api.sendPhoto(this._config.dialog, body, {
-                    caption: key+' posted a new photo',
+                    caption: `${key} posted a new photo`,
                 });
             }
         })
-    },
-    go: function() {
+    }
+
+    go() {
         this.getUsers().then(setInterval( () => {
             this.check();
         }, this._config.time))
