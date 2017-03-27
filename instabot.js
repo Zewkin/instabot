@@ -7,7 +7,7 @@ let jsonfile = require('jsonfile');
 class Instabot {
 
     constructor(config) {
-        this._api = new Telegram(config.token);
+        this._api = new Telegram(config.token, { polling: true });
         this._config = config;
         this.users = {};
     }
@@ -23,6 +23,35 @@ class Instabot {
                 }
             })
         })
+    }
+
+    addUser(user) {
+        if (user in this.users) {
+            this._api.sendMessage(this._config.dialog, `User ${user} already exists`);
+        } else {
+            request({
+                url: `https://www.instagram.com/${user}/?__a=1`,
+                json: true,
+            }, (error, response, body) => {
+                if (!error && response.statusCode == 200) {
+                    this.users[user] = null;
+                    jsonfile.writeFile(this._config.file, this.users);
+                    this._api.sendMessage(this._config.dialog, `User ${user} has been added successfully`);
+                } else {
+                    this._api.sendMessage(this._config.dialog, `There is no such user ${user} on Instagram`);
+                }
+            })
+        }
+    }
+
+    deleteUser(user) {
+        if (user in this.users) {
+            delete this.users[user];
+            jsonfile.writeFile(this._config.file, this.users);
+            this._api.sendMessage(this._config.dialog, `User ${user} has been deleted`);
+        } else {
+            this._api.sendMessage(this._config.dialog, `Can't find user ${user}`);
+        }
     }
 
     check() {
@@ -57,11 +86,21 @@ class Instabot {
     }
 
     go() {
-        this.getUsers().then(setInterval( () => {
-            this.check();
-        }, this._config.time))
-    }
+        this.getUsers().then( () => {
+            setInterval( () => {
+                this.check();
+            }, this._config.time)
 
+            this._api.onText(/\/delete (.+)/, (msg, match) => {
+                this.deleteUser(match[1]);
+            })
+
+            this._api.onText(/\/add (.+)/, (msg, match) => {
+                this.addUser(match[1]);
+            })
+
+        })
+    }
 }
 
 let bot = new Instabot({
