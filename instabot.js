@@ -60,10 +60,10 @@ class Instabot {
                 url: `https://www.instagram.com/${key}/?__a=1`,
                 json: true,
             }, (error, response, body) => {
-                if (!error && response.statusCode == 200 && !body.user.is_private) {
-                    let name = body.user.media.nodes[0].display_src.match(/[^\/?#]+(?=$|[?#])/)[0];
-                    if (!this.users[key] || this.users[key].indexOf(name) == -1) {
-                        this.users[key] = body.user.media.nodes[0].display_src;
+                if (!error && response.statusCode == 200 && !body.user.is_private && body.user.media.nodes.length > 0) {
+                    let code = body.user.media.nodes[0].code;
+                    if (!this.users[key] || this.users[key] !== code) {
+                        this.users[key] = code;
                         jsonfile.writeFile(this._config.file, this.users);
                         this.send(key);
                     }
@@ -74,14 +74,19 @@ class Instabot {
 
     send(key) {
         request({
-            url: this.users[key],
-            encoding: null,
+            url: `https://www.instagram.com/p/${this.users[key]}/?__a=1`,
+            json: true,
         }, (error, response, body) => {
-            if (!error && response.statusCode === 200) {
-                this._api.sendPhoto(this._config.dialog, body, {
-                    caption: `${key} posted a new photo`,
-                });
-            }
+            request({
+                url: body.media.display_src,
+                encoding: null,
+            }, (error, response, body) => {
+                if (!error && response.statusCode === 200) {
+                    this._api.sendPhoto(this._config.dialog, body, {
+                        caption: `${key} posted a new photo`,
+                    });
+                }
+            })
         })
     }
 
