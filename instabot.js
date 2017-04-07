@@ -77,16 +77,31 @@ class Instabot {
             url: `https://www.instagram.com/p/${this.users[key]}/?__a=1`,
             json: true,
         }, (error, response, body) => {
-            request({
-                url: body.media.display_src,
-                encoding: null,
-            }, (error, response, body) => {
-                if (!error && response.statusCode === 200) {
-                    this._api.sendPhoto(this._config.dialog, body, {
-                        caption: `${key} posted a new photo`,
-                    });
+            if (!error && response.statusCode === 200) {
+                if (!body.media.is_video) {
+                    request({
+                        url: body.media.display_src,
+                        encoding: null,
+                    }, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            this._api.sendPhoto(this._config.dialog, body, {
+                                caption: `${key} posted a new photo`,
+                            });
+                        }
+                    })
+                } else {
+                    request({
+                        url: body.media.video_url,
+                        encoding: null,
+                    }, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            this._api.sendVideo(this._config.dialog, body, {
+                                caption: `${key} posted a new video`,
+                            });
+                        }
+                    })
                 }
-            })
+            }
         })
     }
 
