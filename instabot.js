@@ -78,9 +78,9 @@ class Instabot {
             json: true,
         }, (error, response, body) => {
             if (!error && response.statusCode === 200) {
-                if (!body.media.is_video) {
+                if (!body.graphql.shortcode_media.is_video) {
                     request({
-                        url: body.media.display_src,
+                        url: body.graphql.shortcode_media.display_url,
                         encoding: null,
                     }, (error, response, body) => {
                         if (!error && response.statusCode === 200) {
@@ -91,7 +91,7 @@ class Instabot {
                     })
                 } else {
                     request({
-                        url: body.media.video_url,
+                        url: body.graphql.shortcode_media.video_url,
                         encoding: null,
                     }, (error, response, body) => {
                         if (!error && response.statusCode === 200) {
