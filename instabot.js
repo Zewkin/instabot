@@ -80,18 +80,18 @@ class Instabot {
             if (!error && response.statusCode === 200) {
                 switch(body.graphql.shortcode_media.__typename) {
                     case 'GraphSidecar':
-                        for (let i = 0; i < body.graphql.shortcode_media.edge_sidecar_to_children.edges.length; i++) {
+                        body.graphql.shortcode_media.edge_sidecar_to_children.edges.forEach((item, index) => {
                             request({
-                                url: body.graphql.shortcode_media.edge_sidecar_to_children.edges[i].display_url,
+                                url: item.display_url,
                                 encoding: null,
                             }, (error, response, body) => {
                                 if (!error && response.statusCode === 200) {
                                     this._api.sendPhoto(this._config.dialog, body, {
-                                        caption: `${key} posted a new slides: ${i} of ${body.graphql.shortcode_media.edge_sidecar_to_children.edges.length}`,
+                                        caption: `${key} posted a new slides: ${index} of ${body.graphql.shortcode_media.edge_sidecar_to_children.edges.length}`,
                                     });
                                 }
                             })
-                        }
+                        })
                         break;
                     case 'GraphVideo':
                         request({
