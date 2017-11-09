@@ -3,6 +3,7 @@
 let request = require('request');
 let Telegram = require('node-telegram-bot-api');
 let jsonfile = require('jsonfile');
+let async = require('async');
 
 class Instabot {
 
@@ -80,14 +81,14 @@ class Instabot {
             if (!error && response.statusCode === 200) {
                 switch(body.graphql.shortcode_media.__typename) {
                     case 'GraphSidecar':
-                        body.graphql.shortcode_media.edge_sidecar_to_children.edges.forEach((item, index) => {
+                        async.forEachOf(body.graphql.shortcode_media.edge_sidecar_to_children.edges, (item, index) => {
                             request({
-                                url: item.display_url,
+                                url: item.node.display_url,
                                 encoding: null,
                             }, (error, response, body) => {
                                 if (!error && response.statusCode === 200) {
                                     this._api.sendPhoto(this._config.dialog, body, {
-                                        caption: `${key} posted a new slides: ${index} of ${body.graphql.shortcode_media.edge_sidecar_to_children.edges.length}`,
+                                        caption: `${key} posted new slides`,
                                     });
                                 }
                             })
