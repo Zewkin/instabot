@@ -78,28 +78,45 @@ class Instabot {
             json: true,
         }, (error, response, body) => {
             if (!error && response.statusCode === 200) {
-                if (!body.graphql.shortcode_media.is_video) {
-                    request({
-                        url: body.graphql.shortcode_media.display_url,
-                        encoding: null,
-                    }, (error, response, body) => {
-                        if (!error && response.statusCode === 200) {
-                            this._api.sendPhoto(this._config.dialog, body, {
-                                caption: `${key} posted a new photo`,
-                            });
+                switch(body.graphql.shortcode_media.__typename) {
+                    case 'GraphSidecar':
+                        for (let i = 0; i < body.graphql.shortcode_media.edge_sidecar_to_children.edges.length; i++) {
+                            request({
+                                url: body.graphql.shortcode_media.edge_sidecar_to_children.edges[i].display_url,
+                                encoding: null,
+                            }, (error, response, body) => {
+                                if (!error && response.statusCode === 200) {
+                                    this._api.sendPhoto(this._config.dialog, body, {
+                                        caption: `${key} posted a new slides: ${i} of ${body.graphql.shortcode_media.edge_sidecar_to_children.edges.length}`,
+                                    });
+                                }
+                            })
                         }
-                    })
-                } else {
-                    request({
-                        url: body.graphql.shortcode_media.video_url,
-                        encoding: null,
-                    }, (error, response, body) => {
-                        if (!error && response.statusCode === 200) {
-                            this._api.sendVideo(this._config.dialog, body, {
-                                caption: `${key} posted a new video`,
-                            });
-                        }
-                    })
+                        break;
+                    case 'GraphVideo':
+                        request({
+                            url: body.graphql.shortcode_media.video_url,
+                            encoding: null,
+                        }, (error, response, body) => {
+                            if (!error && response.statusCode === 200) {
+                                this._api.sendVideo(this._config.dialog, body, {
+                                    caption: `${key} posted a new video`,
+                                });
+                            }
+                        })
+                        break;
+                    default:
+                        request({
+                            url: body.graphql.shortcode_media.display_url,
+                            encoding: null,
+                        }, (error, response, body) => {
+                            if (!error && response.statusCode === 200) {
+                                this._api.sendPhoto(this._config.dialog, body, {
+                                    caption: `${key} posted a new photo`,
+                                });
+                            }
+                        })
+                        break;
                 }
             }
         })
