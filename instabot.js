@@ -61,8 +61,8 @@ class Instabot {
                 url: `https://www.instagram.com/${key}/?__a=1`,
                 json: true,
             }, (error, response, body) => {
-                if (!error && response.statusCode == 200 && !body.user.is_private && body.user.media.nodes.length > 0) {
-                    let code = body.user.media.nodes[0].code;
+                if (!error && response.statusCode == 200 && !body.graphql.user.is_private && body.graphql.user.edge_owner_to_timeline_media.edges.length > 0) {
+                    let code = body.graphql.user.edge_owner_to_timeline_media.edges[0].node.shortcode;
                     if (!this.users[key] || this.users[key] !== code) {
                         this.users[key] = code;
                         jsonfile.writeFile(this._config.file, this.users);
